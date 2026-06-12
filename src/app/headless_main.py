@@ -48,17 +48,37 @@ def main() -> int:
     def _stop(sig, frame):  # type: ignore[no-untyped-def]
         nonlocal running
         running = False
-        print("\n[headless] Stopping.")
 
     signal.signal(signal.SIGINT, _stop)
     signal.signal(signal.SIGTERM, _stop)
 
     interval = 1.0 / max(1, config.sample_fps)
-    print(f"[headless] Focus monitor running at {config.sample_fps} FPS. Ctrl+C to stop.")
 
+    # ANSI helpers
+    CLEAR = "\033[2J\033[H"
+    BOLD  = "\033[1m"
+    RESET = "\033[0m"
+    GREEN = "\033[32m"
+    RED   = "\033[31m"
+    YELLOW = "\033[33m"
+    CYAN  = "\033[36m"
+
+    def _bar(value: float, width: int = 20) -> str:
+        filled = int(round(value / 100.0 * width))
+        return "[" + "#" * filled + "-" * (width - filled) + "]"
+
+    def _state_color(state: AttentionState) -> str:
+        if state == AttentionState.FOCUSED:
+            return GREEN
+        if state == AttentionState.DISTRACTED:
+            return RED
+        return YELLOW
+
+    tick = 0
     while running:
         tick_start = time.monotonic()
         now = datetime.now()
+        tick += 1
 
         frame = camera.read()
         base = AttentionSample(
@@ -91,28 +111,41 @@ def main() -> int:
         score = scoring.update(classified)
         repo.append(classified, score)
 
+        sc = _state_color(classified.state)
         state_str = classified.state.value.upper()
-        print(
-            f"[{now.strftime('%H:%M:%S')}] "
-            f"{state_str:<12} | "
-            f"score={score.current_score:5.1f} "
-            f"hour={score.hour_score:5.1f} "
-            f"total={score.total_score:5.1f} | "
-            f"reason={classified.reason:<28} "
-            f"yaw={classified.yaw_deg:6.1f} "
-            f"pitch={classified.pitch_deg:6.1f} "
-            f"calib={classified.calibration_progress:.0%}"
-        )
+        w = 44  # inner box width
+
+        lines = [
+            CLEAR,
+            CYAN + "+" + "-" * w + "+" + RESET,
+            CYAN + "|" + RESET + BOLD + "  FOCUS MONITOR".center(w) + RESET + CYAN + "|" + RESET,
+            CYAN + "+" + "-" * w + "+" + RESET,
+            CYAN + "|" + RESET + f"  Time   : {now.strftime('%H:%M:%S')}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Status : {sc}{BOLD}{state_str}{RESET}".ljust(w + len(sc) + len(BOLD) + len(RESET)) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Reason : {classified.reason}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + " " * w + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Score  : {score.current_score:5.1f}  {_bar(score.current_score)}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Hour   : {score.hour_score:5.1f}  {_bar(score.hour_score)}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Total  : {score.total_score:5.1f}  {_bar(score.total_score)}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + " " * w + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Yaw    : {classified.yaw_deg:6.1f} deg".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Pitch  : {classified.pitch_deg:6.1f} deg".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Conf   : {classified.confidence:.2f}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Calib  : {classified.calibration_progress:.0%}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + " " * w + CYAN + "|" + RESET,
+            CYAN + "|" + RESET + f"  Tick   : {tick}   FPS target: {config.sample_fps}".ljust(w) + CYAN + "|" + RESET,
+            CYAN + "+" + "-" * w + "+" + RESET,
+            "  Ctrl+C to stop",
+        ]
+        print("\n".join(lines), flush=True)
 
         elapsed = time.monotonic() - tick_start
         sleep_time = interval - elapsed
         if sleep_time > 0:
             time.sleep(sleep_time)
 
-    camera.close()
-    detector.close()
-    repo.close()
-    return 0
+    print("\n[headless] Stopped.")
+
 
 
 if __name__ == "__main__":
