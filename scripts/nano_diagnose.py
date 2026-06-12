@@ -5,6 +5,14 @@ from __future__ import annotations
 import sys
 import time
 
+ROOT = __import__("os").path.dirname(__import__("os").path.dirname(__file__))
+SRC = __import__("os").path.join(ROOT, "src")
+if SRC not in sys.path:
+    sys.path.insert(0, SRC)
+
+from app.config import load_config
+from capture.camera import CameraStream
+
 print("=== Focus Monitor Diagnostics ===\n")
 
 # 1. OpenCV
@@ -24,41 +32,39 @@ try:
 except ImportError as e:
     print(f"    FAIL  {e}")
 
+config = load_config()
+
 # 3. Camera open
-print("[3] Opening camera (index 0)...")
-cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("    FAIL  Could not open camera index 0")
-    print("    Try: v4l2-ctl --list-devices  to find your camera")
-    # Try index 1
-    print("    Trying index 1...")
-    cap = cv2.VideoCapture(1)
-    if not cap.isOpened():
-        print("    FAIL  Camera index 1 also failed. Check USB connection.")
-        sys.exit(1)
-    else:
-        print("    OK  Camera opened at index 1  (set CAMERA_INDEX=1 in .env)")
-else:
-    print("    OK  Camera opened at index 0")
+print("[3] Opening camera through CameraStream...")
+camera = CameraStream(
+    config.camera_index,
+    config.camera_width,
+    config.camera_height,
+    backend=config.camera_backend,
+    allow_index_scan=config.camera_allow_index_scan,
+    scan_max_index=config.camera_scan_max_index,
+    recover_failures=config.camera_recover_failures,
+)
 
 # 4. Frame read
 print("[4] Reading frames...")
-ok = False
 frame = None
 for attempt in range(10):
-    ok, frame = cap.read()
-    if ok and frame is not None:
+    capture = camera.read()
+    if capture.ok and capture.frame is not None:
+        frame = capture.frame
         break
     time.sleep(0.1)
 
-if not ok or frame is None:
+if frame is None:
     print("    FAIL  Could not read a frame from camera")
-    cap.release()
+    print(f"    Error: {capture.error if 'capture' in locals() else 'unknown'}")
+    camera.close()
     sys.exit(1)
 
 h, w = frame.shape[:2]
 print(f"    OK  Frame received: {w}x{h} pixels")
-cap.release()
+print(f"    OK  Capture path: {camera.active_camera_label}")
 
 # 5. MediaPipe
 print("[5] Checking MediaPipe...")
@@ -73,7 +79,6 @@ except ImportError as e:
 # 6. FaceMesh detection on a live frame
 print("[6] Testing face detection on 5 frames (look at the camera)...")
 print(f"    (frames will be resized to 640x480 before detection)")
-cap = cv2.VideoCapture(0)
 mesh = mp.solutions.face_mesh.FaceMesh(
     static_image_mode=False,
     max_num_faces=1,
@@ -84,9 +89,10 @@ mesh = mp.solutions.face_mesh.FaceMesh(
 detected = 0
 frames_tried = 0
 for _ in range(30):
-    ok, frame = cap.read()
-    if not ok or frame is None:
+    capture = camera.read()
+    if not capture.ok or capture.frame is None:
         continue
+    frame = capture.frame
     frames_tried += 1
     # Always resize to 640x480 — MediaPipe fails on very high-res frames
     fh, fw = frame.shape[:2]
@@ -101,7 +107,7 @@ for _ in range(30):
             break
     time.sleep(0.1)
 
-cap.release()
+camera.close()
 mesh.close()
 
 if detected == 0:

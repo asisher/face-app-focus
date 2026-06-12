@@ -76,6 +76,15 @@ CAMERA_SCAN_MAX_INDEX=5
 CAMERA_RECOVER_FAILURES=3
 ```
 
+On Jetson Nano with a CSI ribbon camera, use:
+
+```bash
+CAMERA_BACKEND=jetson-csi
+CAMERA_INDEX=0
+CAMERA_WIDTH=640
+CAMERA_HEIGHT=480
+```
+
 4. Restart the app after changing `.env`.
 
 The app reads `.env` automatically at startup.
