@@ -72,6 +72,7 @@ except ImportError as e:
 
 # 6. FaceMesh detection on a live frame
 print("[6] Testing face detection on 5 frames (look at the camera)...")
+print(f"    (frames will be resized to 640x480 before detection)")
 cap = cv2.VideoCapture(0)
 mesh = mp.solutions.face_mesh.FaceMesh(
     static_image_mode=False,
@@ -87,6 +88,10 @@ for _ in range(30):
     if not ok or frame is None:
         continue
     frames_tried += 1
+    # Always resize to 640x480 — MediaPipe fails on very high-res frames
+    fh, fw = frame.shape[:2]
+    if fw != 640 or fh != 480:
+        frame = cv2.resize(frame, (640, 480), interpolation=cv2.INTER_AREA)
     rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     result = mesh.process(rgb)
     if result.multi_face_landmarks:
