@@ -23,6 +23,7 @@ def main() -> int:
         config.camera_width,
         config.camera_height,
         backend=config.camera_backend,
+        rotation=config.camera_rotation,
         allow_index_scan=config.camera_allow_index_scan,
         scan_max_index=config.camera_scan_max_index,
         recover_failures=config.camera_recover_failures,

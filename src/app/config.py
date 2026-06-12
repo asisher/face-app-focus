@@ -63,6 +63,7 @@ class AppConfig:
     camera_width: int
     camera_height: int
     camera_backend: str
+    camera_rotation: int
     camera_allow_index_scan: bool
     camera_scan_max_index: int
     camera_recover_failures: int
@@ -88,6 +89,7 @@ def load_config() -> AppConfig:
         camera_width=_env_int("CAMERA_WIDTH", 640),
         camera_height=_env_int("CAMERA_HEIGHT", 480),
         camera_backend=_env_str("CAMERA_BACKEND", "auto").lower(),
+        camera_rotation=_env_int("CAMERA_ROTATION", 0) % 360,
         camera_allow_index_scan=_env_bool("CAMERA_ALLOW_INDEX_SCAN", False),
         camera_scan_max_index=max(0, _env_int("CAMERA_SCAN_MAX_INDEX", 5)),
         camera_recover_failures=max(1, _env_int("CAMERA_RECOVER_FAILURES", 3)),

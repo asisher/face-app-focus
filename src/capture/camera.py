@@ -49,6 +49,22 @@ def normalize_camera_frame(frame: Optional[np.ndarray]) -> Optional[np.ndarray]:
     return frame
 
 
+def apply_camera_rotation(frame: Optional[np.ndarray], rotation_deg: int) -> Optional[np.ndarray]:
+    if frame is None:
+        return None
+
+    normalized = rotation_deg % 360
+    if normalized == 0:
+        return frame
+    if normalized == 90:
+        return cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    if normalized == 180:
+        return cv2.rotate(frame, cv2.ROTATE_180)
+    if normalized == 270:
+        return cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    return frame
+
+
 class CameraStream:
     _JETSON_SHELL_BACKEND = "jetson-csi-shell"
 
@@ -58,6 +74,7 @@ class CameraStream:
         width: int,
         height: int,
         backend: str = "auto",
+        rotation: int = 0,
         allow_index_scan: bool = False,
         scan_max_index: int = 5,
         recover_failures: int = 3,
@@ -66,6 +83,7 @@ class CameraStream:
         self._width = width
         self._height = height
         self._backend = backend
+        self._rotation = rotation % 360
         self._allow_index_scan = allow_index_scan
         self._scan_max_index = scan_max_index
         self._recover_failures = max(1, recover_failures)
@@ -182,6 +200,7 @@ class CameraStream:
 
             frame = cv2.imread(self._shell_capture_path)
             frame = normalize_camera_frame(frame)
+            frame = apply_camera_rotation(frame, self._rotation)
             if frame is None:
                 self._last_error = "gst_capture_empty"
                 return None
@@ -221,6 +240,7 @@ class CameraStream:
         for _ in range(4):
             ok, frame = cap.read()
             frame = normalize_camera_frame(frame)
+            frame = apply_camera_rotation(frame, self._rotation)
             if ok and frame is not None:
                 break
         if not ok or frame is None:
@@ -288,6 +308,7 @@ class CameraStream:
 
         ok, frame = self._capture.read()
         frame = normalize_camera_frame(frame)
+        frame = apply_camera_rotation(frame, self._rotation)
         if not ok or frame is None:
             self._consecutive_failures += 1
             if self._consecutive_failures >= self._recover_failures:
@@ -295,6 +316,7 @@ class CameraStream:
                 if reopened and self._capture is not None:
                     ok, frame = self._capture.read()
                     frame = normalize_camera_frame(frame)
+                    frame = apply_camera_rotation(frame, self._rotation)
                     if ok and frame is not None:
                         self._consecutive_failures = 0
                         return CameraFrame(ok=True, frame=frame)

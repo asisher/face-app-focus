@@ -83,6 +83,7 @@ CAMERA_BACKEND=jetson-csi
 CAMERA_INDEX=0
 CAMERA_WIDTH=640
 CAMERA_HEIGHT=480
+CAMERA_ROTATION=180
 ```
 
 4. Restart the app after changing `.env`.
