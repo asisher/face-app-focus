@@ -279,6 +279,12 @@ class CameraStream:
             reopened = self._open_with_fallbacks()
             if not reopened:
                 return CameraFrame(ok=False, frame=None, error=self._last_error or "camera_not_open")
+            if self._active_backend_name == self._JETSON_SHELL_BACKEND and self._shell_index is not None:
+                frame = self._capture_jetson_shell_frame(self._shell_index)
+                if frame is not None:
+                    self._consecutive_failures = 0
+                    return CameraFrame(ok=True, frame=frame)
+                return CameraFrame(ok=False, frame=None, error=self._last_error or "camera_read_failed")
 
         ok, frame = self._capture.read()
         frame = normalize_camera_frame(frame)
