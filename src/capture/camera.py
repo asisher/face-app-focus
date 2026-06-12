@@ -9,7 +9,7 @@ import cv2
 import numpy as np
 
 
-@dataclass(slots=True)
+@dataclass
 class CameraFrame:
     ok: bool
     frame: Optional[np.ndarray]

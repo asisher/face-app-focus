@@ -2,16 +2,16 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import datetime
-from enum import StrEnum
+from enum import Enum
 
 
-class AttentionState(StrEnum):
+class AttentionState(str, Enum):
     FOCUSED = "focused"
     DISTRACTED = "distracted"
     UNKNOWN = "unknown"
 
 
-@dataclass(slots=True)
+@dataclass
 class AttentionSample:
     timestamp: datetime
     state: AttentionState
@@ -32,7 +32,7 @@ class AttentionSample:
     alignment_score: float = 0.0
 
 
-@dataclass(slots=True)
+@dataclass
 class ScoreSnapshot:
     timestamp: datetime
     current_score: float

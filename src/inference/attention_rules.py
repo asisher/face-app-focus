@@ -9,7 +9,7 @@ from domain.models import AttentionSample, AttentionState
 from inference.face_landmarks import FaceObservation
 
 
-@dataclass(slots=True)
+@dataclass
 class RuleSignals:
     focus_prob: float
     reason: str

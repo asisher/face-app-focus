@@ -8,7 +8,7 @@ from domain.models import AttentionSample, ScoreSnapshot
 from scoring.engine import hour_key_for_timestamp
 
 
-@dataclass(slots=True)
+@dataclass
 class RestoredScores:
     total_score: float
     hour_score: float

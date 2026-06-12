@@ -14,7 +14,7 @@ except ImportError:  # pragma: no cover
     mp = None
 
 
-@dataclass(slots=True)
+@dataclass
 class FaceObservation:
     has_face: bool
     yaw_deg: float

@@ -6,7 +6,7 @@ from datetime import datetime
 from domain.models import AttentionSample, AttentionState, ScoreSnapshot
 
 
-@dataclass(slots=True)
+@dataclass
 class ScoreState:
     current_score: float = 50.0
     hour_score: float = 50.0

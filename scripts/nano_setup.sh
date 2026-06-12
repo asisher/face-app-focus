@@ -10,9 +10,6 @@ sudo apt update
 echo "[nano_setup] Installing system dependencies"
 sudo apt install -y \
   git \
-  python3 \
-  python3-venv \
-  python3-pip \
   build-essential \
   cmake \
   pkg-config \
@@ -23,11 +20,24 @@ sudo apt install -y \
   libtiff-dev \
   libavcodec-dev \
   libavformat-dev \
-  libswscale-dev
+  libswscale-dev \
+  software-properties-common
+
+# Jetson Nano ships with Python 3.6 which is too old.
+# Install Python 3.8 from deadsnakes PPA if not already present.
+if ! command -v python3.8 &>/dev/null; then
+  echo "[nano_setup] Installing Python 3.8 via deadsnakes PPA"
+  sudo add-apt-repository -y ppa:deadsnakes/ppa
+  sudo apt update
+  sudo apt install -y python3.8 python3.8-venv python3.8-dev
+fi
+
+PYTHON=python3.8
+echo "[nano_setup] Using Python: $($PYTHON --version)"
 
 if [[ ! -d .venv ]]; then
-  echo "[nano_setup] Creating virtual environment"
-  python3 -m venv .venv
+  echo "[nano_setup] Creating virtual environment with Python 3.8"
+  $PYTHON -m venv .venv
 fi
 
 echo "[nano_setup] Installing Python dependencies"

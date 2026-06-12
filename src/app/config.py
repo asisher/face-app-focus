@@ -56,7 +56,7 @@ def _load_dotenv(path: str = ".env") -> None:
             os.environ[key] = value
 
 
-@dataclass(slots=True)
+@dataclass
 class AppConfig:
     db_path: str
     camera_index: int
