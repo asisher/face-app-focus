@@ -14,4 +14,4 @@ sudo nvpmodel -m 0 || true
 sudo jetson_clocks || true
 
 source .venv/bin/activate
-exec focus-monitor
+exec focus-monitor-headless

@@ -40,7 +40,7 @@ if [[ ! -d .venv ]]; then
   $PYTHON -m venv .venv
 fi
 
-echo "[nano_setup] Installing Python dependencies"
+echo "[nano_setup] Installing Python dependencies (headless, no Qt)"
 source .venv/bin/activate
 python -m pip install --upgrade pip setuptools wheel
 python -m pip install -e .
