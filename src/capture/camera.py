@@ -4,7 +4,7 @@ from dataclasses import dataclass
 import contextlib
 import platform
 import time
-from typing import Optional
+from typing import List, Optional, Tuple, Union
 
 import cv2
 import numpy as np
@@ -86,7 +86,7 @@ class CameraStream:
     def _is_jetson_linux(self) -> bool:
         return platform.system().lower() == "linux" and platform.machine().lower() in {"aarch64", "arm64"}
 
-    def _available_backends(self) -> list[tuple[int, str]]:
+    def _available_backends(self) -> List[Tuple[int, str]]:
         if self._backend in {"jetson", "jetson-csi", "csi"} and hasattr(cv2, "CAP_GSTREAMER"):
             return [(int(cv2.CAP_GSTREAMER), "jetson-csi")]
 
@@ -112,7 +112,7 @@ class CameraStream:
             ]
         return [(int(cv2.CAP_ANY), "any")]
 
-    def _candidate_indices(self) -> list[int]:
+    def _candidate_indices(self) -> List[int]:
         if not self._allow_index_scan:
             return [self._index]
 
@@ -123,7 +123,7 @@ class CameraStream:
         return candidates
 
     def _open_capture(self, index: int, backend_flag: int) -> Optional[cv2.VideoCapture]:
-        source: int | str = index
+        source: Union[int, str] = index
         if backend_flag == getattr(cv2, "CAP_GSTREAMER", -9999):
             source = self._jetson_csi_pipeline(index)
 
