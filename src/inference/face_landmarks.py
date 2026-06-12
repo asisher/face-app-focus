@@ -51,10 +51,19 @@ class FaceLandmarkDetector:
         except Exception:
             self._mesh = None
 
+    # MediaPipe works best at 640x480. Very high-res frames cause face detection
+    # to fail because the face occupies too small a fraction of the image.
+    _INFER_W = 640
+    _INFER_H = 480
+
     def infer(self, frame_bgr: np.ndarray) -> FaceObservation:
         self._ensure_mesh()
         if self._mesh is None:
             return FaceObservation(False, 0.0, 0.0, 0.0, 0.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0)
+
+        h, w = frame_bgr.shape[:2]
+        if w != self._INFER_W or h != self._INFER_H:
+            frame_bgr = cv2.resize(frame_bgr, (self._INFER_W, self._INFER_H), interpolation=cv2.INTER_AREA)
 
         rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
         result = self._mesh.process(rgb)
